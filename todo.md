@@ -165,3 +165,15 @@
 - [x] Test subject shortcuts functionality
 - [x] Test keyboard behavior with message input
 - [x] Test Material dialogs on all platforms
+
+
+## Latest Fixes & Features
+- [x] Fix subject shortcuts to properly update selected subject
+- [x] Fix keyboard typing bar not coming up when typing
+- [x] Add one-time WhatsApp join dialog on app startup
+- [x] Persist WhatsApp dialog shown state
+- [x] Add JKBose Helper download link in settings
+- [x] Create Material dialog for WhatsApp join
+- [x] Test subject shortcuts work correctly
+- [x] Test keyboard appears when typing
+- [x] Test WhatsApp dialog shows only once

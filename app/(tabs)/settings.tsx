@@ -1,4 +1,4 @@
-import { ScrollView, Text, View, Pressable } from "react-native";
+import { ScrollView, Text, View, Pressable, Linking } from "react-native";
 import { useState, useEffect } from "react";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
@@ -69,6 +69,17 @@ export default function SettingsScreen() {
       await loadSettings();
     } catch (error) {
       console.error("Failed to clear data:", error);
+    }
+  };
+
+  const handleDownloadJKBose = async () => {
+    try {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      // Replace with actual JKBose Helper app download link
+      const downloadLink = "https://play.google.com/store/apps/details?id=com.jkbose.helper";
+      await Linking.openURL(downloadLink);
+    } catch (error) {
+      console.error("Failed to open download link:", error);
     }
   };
 
@@ -157,6 +168,65 @@ export default function SettingsScreen() {
                 </Pressable>
               ))}
             </View>
+          </View>
+
+          {/* Downloads Section */}
+          <View>
+            <View className="flex-row items-center gap-2 mb-3">
+              <MaterialIcons
+                name="download"
+                size={20}
+                color={colors.primary}
+              />
+              <Text className="text-lg font-semibold text-foreground">
+                Recommended Apps
+              </Text>
+            </View>
+
+            <Pressable
+              onPress={handleDownloadJKBose}
+              style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
+            >
+              <View
+                className="p-4 rounded-lg border-2 flex-row items-center justify-between"
+                style={{
+                  borderColor: colors.primary,
+                  backgroundColor: colors.primary + "10",
+                }}
+              >
+                <View className="flex-row items-center gap-3 flex-1">
+                  <View
+                    className="w-12 h-12 rounded-lg items-center justify-center"
+                    style={{ backgroundColor: colors.primary }}
+                  >
+                    <MaterialIcons
+                      name="school"
+                      size={24}
+                      color="#FFFFFF"
+                    />
+                  </View>
+                  <View className="flex-1">
+                    <Text
+                      className="text-base font-semibold"
+                      style={{ color: colors.foreground }}
+                    >
+                      JKBose Helper
+                    </Text>
+                    <Text
+                      className="text-xs text-muted mt-1"
+                      style={{ color: colors.muted }}
+                    >
+                      Your complete study companion
+                    </Text>
+                  </View>
+                </View>
+                <MaterialIcons
+                  name="chevron-right"
+                  size={24}
+                  color={colors.primary}
+                />
+              </View>
+            </Pressable>
           </View>
 
           {/* About Section */}

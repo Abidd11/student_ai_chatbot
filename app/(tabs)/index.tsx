@@ -17,6 +17,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as Clipboard from "expo-clipboard";
 import { MaterialDialog } from "@/components/ui/material-dialog";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const SUBJECTS = [
   { id: "math", label: "Math", icon: "calculate" },
@@ -30,6 +31,8 @@ const SUBJECTS = [
   { id: "islamic", label: "Islamic", icon: "menu-book" },
 ];
 
+const WHATSAPP_DIALOG_KEY = "studyai_whatsapp_shown";
+
 export default function ChatScreen() {
   const colors = useColors();
   const { messages, isLoading, sendMessage, error, clearMessages } = useAIChat();
@@ -38,7 +41,45 @@ export default function ChatScreen() {
   const [selectedSubject, setSelectedSubject] = useState("General");
   const [showCopyDialog, setShowCopyDialog] = useState(false);
   const [copiedMessage, setCopiedMessage] = useState("");
+  const [showWhatsAppDialog, setShowWhatsAppDialog] = useState(false);
   const flatListRef = useRef<FlatList>(null);
+  const inputRef = useRef<TextInput>(null);
+
+  // Check if WhatsApp dialog has been shown before
+  useEffect(() => {
+    checkWhatsAppDialog();
+  }, []);
+
+  const checkWhatsAppDialog = async () => {
+    try {
+      const shown = await AsyncStorage.getItem(WHATSAPP_DIALOG_KEY);
+      if (!shown) {
+        setShowWhatsAppDialog(true);
+      }
+    } catch (error) {
+      console.error("Failed to check WhatsApp dialog:", error);
+    }
+  };
+
+  const handleWhatsAppDialogClose = async () => {
+    try {
+      await AsyncStorage.setItem(WHATSAPP_DIALOG_KEY, "true");
+      setShowWhatsAppDialog(false);
+    } catch (error) {
+      console.error("Failed to save WhatsApp dialog state:", error);
+    }
+  };
+
+  const handleOpenWhatsApp = async () => {
+    try {
+      await handleWhatsAppDialogClose();
+      // Open WhatsApp link - you can replace with actual WhatsApp group link
+      const whatsappLink = "https://chat.whatsapp.com/YOUR_GROUP_LINK"; // Replace with actual link
+      // For now, we'll just close the dialog
+    } catch (error) {
+      console.error("Failed to open WhatsApp:", error);
+    }
+  };
 
   const handleSendMessage = async () => {
     if (inputText.trim() === "") return;
@@ -49,7 +90,7 @@ export default function ChatScreen() {
     // Haptic feedback
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-    // Send message through AI hook
+    // Send message through AI hook with selected subject
     await sendMessage(messageText);
   };
 
@@ -78,6 +119,11 @@ export default function ChatScreen() {
     } catch (error) {
       console.error("Error sharing:", error);
     }
+  };
+
+  const handleSubjectChange = (subject: string) => {
+    setSelectedSubject(subject);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
   const renderMessage = ({
@@ -293,7 +339,7 @@ export default function ChatScreen() {
             {SUBJECTS.map((subject) => (
               <Pressable
                 key={subject.id}
-                onPress={() => setSelectedSubject(subject.label)}
+                onPress={() => handleSubjectChange(subject.label)}
                 style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
               >
                 <View
@@ -371,6 +417,7 @@ export default function ChatScreen() {
               color={colors.muted}
             />
             <TextInput
+              ref={inputRef}
               className="flex-1 text-base text-foreground"
               placeholder="Ask a question..."
               placeholderTextColor={colors.muted}
@@ -379,6 +426,7 @@ export default function ChatScreen() {
               onSubmitEditing={handleSendMessage}
               returnKeyType="send"
               editable={!isLoading}
+              multiline={false}
               style={{
                 color: colors.foreground,
               }}
@@ -418,6 +466,17 @@ export default function ChatScreen() {
           setShowCopyDialog(false);
           setCopiedMessage("");
         }}
+      />
+
+      {/* WhatsApp Join Dialog */}
+      <MaterialDialog
+        visible={showWhatsAppDialog}
+        title="Join Our WhatsApp Group"
+        message="Join our WhatsApp community to get instant study tips, doubt solving, and connect with other students!"
+        confirmText="Join Now"
+        cancelText="Later"
+        onConfirm={handleOpenWhatsApp}
+        onCancel={handleWhatsAppDialogClose}
       />
     </ScreenContainer>
   );
