@@ -1,4 +1,12 @@
-import { FlatList, Text, View, TextInput, KeyboardAvoidingView, Platform, Pressable } from "react-native";
+import {
+  FlatList,
+  Text,
+  View,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+} from "react-native";
 import { useRef, useEffect, useState } from "react";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
@@ -8,16 +16,9 @@ import * as Haptics from "expo-haptics";
 
 export default function ChatScreen() {
   const colors = useColors();
-  const { messages, isLoading, sendMessage, error } = useAIChat();
+  const { messages, isLoading, sendMessage, error, clearMessages } = useAIChat();
   const [inputText, setInputText] = useState("");
   const flatListRef = useRef<FlatList>(null);
-
-  // Add initial greeting message on mount
-  useEffect(() => {
-    if (messages.length === 0) {
-      // Initial greeting is handled by the hook
-    }
-  }, []);
 
   const handleSendMessage = async () => {
     if (inputText.trim() === "") return;
@@ -32,25 +33,32 @@ export default function ChatScreen() {
     await sendMessage(messageText);
   };
 
-  const renderMessage = ({ item }: { item: { role: "user" | "assistant"; content: string } }) => {
+  const renderMessage = ({
+    item,
+  }: {
+    item: { role: "user" | "assistant"; content: string };
+  }) => {
     const isUser = item.role === "user";
     return (
       <View
-        className={`flex-row mb-3 ${isUser ? "justify-end" : "justify-start"}`}
+        className={`flex-row mb-4 px-4 ${isUser ? "justify-end" : "justify-start"}`}
       >
         <View
-          className={`max-w-xs rounded-2xl px-4 py-3 ${
-            isUser
-              ? "bg-primary"
-              : "bg-surface border border-border"
+          className={`max-w-xs rounded-3xl px-5 py-3 ${
+            isUser ? "bg-primary" : "bg-surface border border-border"
           }`}
           style={{
             backgroundColor: isUser ? colors.primary : colors.surface,
             borderColor: isUser ? colors.primary : colors.border,
+            shadowColor: colors.foreground,
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.1,
+            shadowRadius: 2,
+            elevation: 2,
           }}
         >
           <Text
-            className={`text-base ${
+            className={`text-base leading-relaxed ${
               isUser ? "text-white" : "text-foreground"
             }`}
             style={{
@@ -67,105 +75,178 @@ export default function ChatScreen() {
   const renderTypingIndicator = () => {
     if (!isLoading) return null;
     return (
-      <View className="flex-row mb-3 justify-start">
+      <View className="flex-row mb-4 px-4 justify-start">
         <View
-          className="rounded-2xl px-4 py-3 flex-row gap-1"
-          style={{ backgroundColor: colors.surface, borderColor: colors.border }}
+          className="rounded-3xl px-5 py-3 flex-row gap-1.5"
+          style={{
+            backgroundColor: colors.surface,
+            borderColor: colors.border,
+            borderWidth: 1,
+          }}
         >
           <View
-            className="w-2 h-2 rounded-full animate-bounce"
+            className="w-2.5 h-2.5 rounded-full"
             style={{ backgroundColor: colors.muted }}
           />
           <View
-            className="w-2 h-2 rounded-full animate-bounce"
-            style={{ backgroundColor: colors.muted, animationDelay: "0.1s" }}
+            className="w-2.5 h-2.5 rounded-full"
+            style={{ backgroundColor: colors.muted, opacity: 0.7 }}
           />
           <View
-            className="w-2 h-2 rounded-full animate-bounce"
-            style={{ backgroundColor: colors.muted, animationDelay: "0.2s" }}
+            className="w-2.5 h-2.5 rounded-full"
+            style={{ backgroundColor: colors.muted, opacity: 0.4 }}
           />
         </View>
       </View>
     );
   };
 
-  // Show error if any
   const renderError = () => {
     if (!error) return null;
     return (
-      <View className="bg-error bg-opacity-10 border border-error rounded-lg p-3 mb-3">
-        <Text className="text-error text-sm" style={{ color: colors.error }}>
+      <View className="mx-4 mb-4 bg-error bg-opacity-10 border border-error rounded-2xl p-4 flex-row items-start gap-3">
+        <MaterialIcons name="error-outline" size={20} color={colors.error} />
+        <Text
+          className="text-sm flex-1 text-error"
+          style={{ color: colors.error }}
+        >
           {error}
         </Text>
       </View>
     );
   };
 
-  return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      className="flex-1"
-      keyboardVerticalOffset={100}
-    >
-      <ScreenContainer className="bg-background flex-1 justify-between">
-        {/* Header */}
-        <View className="border-b border-border py-4 px-4">
-          <Text className="text-2xl font-bold text-foreground">StudyAI</Text>
-          <Text className="text-sm text-muted mt-1">
-            Your AI Study Assistant
+  const renderEmptyState = () => {
+    if (messages.length > 0) return null;
+    return (
+      <View className="flex-1 items-center justify-center px-6 gap-4">
+        <View
+          className="w-20 h-20 rounded-full items-center justify-center"
+          style={{ backgroundColor: colors.primary + "20" }}
+        >
+          <MaterialIcons
+            name="auto-awesome"
+            size={40}
+            color={colors.primary}
+          />
+        </View>
+        <View className="items-center gap-2">
+          <Text className="text-2xl font-bold text-foreground text-center">
+            Welcome to StudyAI
+          </Text>
+          <Text
+            className="text-base text-muted text-center leading-relaxed"
+            style={{ color: colors.muted }}
+          >
+            Ask me anything about Math, Science, Physics, Chemistry, Biology,
+            English, History, Geography, or Islamic Studies
           </Text>
         </View>
+      </View>
+    );
+  };
 
-        {/* Messages List */}
-        {renderError()}
-        <FlatList
-          ref={flatListRef}
-          data={messages}
-          renderItem={renderMessage}
-          keyExtractor={(item, index) => index.toString()}
-          contentContainerStyle={{ padding: 16, flexGrow: 1 }}
-          onContentSizeChange={() => flatListRef.current?.scrollToEnd()}
-          ListFooterComponent={renderTypingIndicator}
-          scrollEnabled={true}
-        />
-
-        {/* Input Area */}
+  return (
+    <ScreenContainer className="bg-background flex-1">
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        className="flex-1"
+      >
+        {/* Header */}
         <View
-          className="border-t border-border px-4 py-3"
+          className="border-b border-border py-4 px-4 flex-row justify-between items-center"
           style={{ backgroundColor: colors.background }}
         >
-          <View
-            className="flex-row items-center rounded-full px-4 py-2 border border-border"
-            style={{ backgroundColor: colors.surface, borderColor: colors.border }}
-          >
-            <TextInput
-              className="flex-1 text-foreground text-base"
-              placeholder="Ask a question..."
-              placeholderTextColor={colors.muted}
-              value={inputText}
-              onChangeText={setInputText}
-              multiline
-              style={{ color: colors.foreground, maxHeight: 100 }}
-            />
+          <View>
+            <Text className="text-2xl font-bold text-foreground">StudyAI</Text>
+            <Text className="text-xs text-muted mt-0.5">
+              Your AI Study Assistant
+            </Text>
+          </View>
+          {messages.length > 0 && (
             <Pressable
-              onPress={handleSendMessage}
-              disabled={inputText.trim() === "" || isLoading}
-              style={({ pressed }) => ([
-                {
-                  opacity: pressed ? 0.7 : inputText.trim() === "" || isLoading ? 0.5 : 1,
-                },
-              ])}
-              className="ml-2"
+              onPress={clearMessages}
+              style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
             >
               <MaterialIcons
-                name="send"
+                name="refresh"
                 size={24}
                 color={colors.primary}
               />
             </Pressable>
+          )}
+        </View>
+
+        {/* Messages List */}
+        {renderError()}
+        {messages.length === 0 ? (
+          renderEmptyState()
+        ) : (
+          <FlatList
+            ref={flatListRef}
+            data={messages}
+            renderItem={renderMessage}
+            keyExtractor={(item, index) => index.toString()}
+            contentContainerStyle={{ paddingVertical: 16, flexGrow: 1 }}
+            onContentSizeChange={() => flatListRef.current?.scrollToEnd()}
+            ListFooterComponent={renderTypingIndicator}
+            scrollEnabled={true}
+            showsVerticalScrollIndicator={false}
+          />
+        )}
+
+        {/* Input Area */}
+        <View
+          className="border-t border-border px-4 py-4"
+          style={{ backgroundColor: colors.background }}
+        >
+          <View
+            className="flex-row items-center gap-3 rounded-full px-4 py-3 border border-border"
+            style={{
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
+            }}
+          >
+            <MaterialIcons
+              name="edit"
+              size={20}
+              color={colors.muted}
+            />
+            <TextInput
+              className="flex-1 text-base text-foreground"
+              placeholder="Ask a question..."
+              placeholderTextColor={colors.muted}
+              value={inputText}
+              onChangeText={setInputText}
+              onSubmitEditing={handleSendMessage}
+              returnKeyType="send"
+              editable={!isLoading}
+              style={{
+                color: colors.foreground,
+              }}
+            />
+            <Pressable
+              onPress={handleSendMessage}
+              disabled={isLoading || inputText.trim() === ""}
+              style={({ pressed }) => [
+                {
+                  opacity: pressed ? 0.7 : isLoading || inputText.trim() === "" ? 0.4 : 1,
+                },
+              ]}
+            >
+              <MaterialIcons
+                name="send"
+                size={20}
+                color={
+                  isLoading || inputText.trim() === ""
+                    ? colors.muted
+                    : colors.primary
+                }
+              />
+            </Pressable>
           </View>
         </View>
-      </ScreenContainer>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </ScreenContainer>
   );
 }

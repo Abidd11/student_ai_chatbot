@@ -122,3 +122,20 @@
 - [x] Quiz generation
 - [x] Formula sheet creation
 - [x] Important questions generator
+
+
+## Refinement Phase - User Requested Changes
+- [x] Remove Quiz screen (app/(tabs)/quiz.tsx)
+- [x] Remove Study Tools screen (app/(tabs)/study-tools.tsx)
+- [x] Remove Notes screen (app/(tabs)/notes.tsx)
+- [x] Update tab navigation to remove extra screens
+- [x] Improve chat UI with better spacing and typography
+- [x] Enhance message bubble design
+- [x] Improve input area design
+- [x] Add better visual hierarchy
+- [x] Implement working theme toggle in settings
+- [x] Implement working notification settings
+- [x] Implement working voice settings
+- [x] Implement working about section
+- [x] Add preference persistence with AsyncStorage
+- [x] Test all settings functionality
