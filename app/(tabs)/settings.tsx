@@ -2,6 +2,7 @@ import { ScrollView, Text, View, Pressable, Switch, Alert } from "react-native";
 import { useState, useEffect } from "react";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { MaterialIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
@@ -9,27 +10,19 @@ import * as Haptics from "expo-haptics";
 const STORAGE_KEYS = {
   THEME: "studyai_theme",
   NOTIFICATIONS: "studyai_notifications",
-  VOICE_ENABLED: "studyai_voice_enabled",
-  VOICE_LANGUAGE: "studyai_voice_language",
-  VOICE_SPEED: "studyai_voice_speed",
 };
 
 interface SettingsState {
   theme: "light" | "dark" | "auto";
   notificationsEnabled: boolean;
-  voiceEnabled: boolean;
-  voiceLanguage: string;
-  voiceSpeed: number;
 }
 
 export default function SettingsScreen() {
   const colors = useColors();
+  const colorScheme = useColorScheme();
   const [settings, setSettings] = useState<SettingsState>({
     theme: "auto",
     notificationsEnabled: true,
-    voiceEnabled: false,
-    voiceLanguage: "en",
-    voiceSpeed: 1.0,
   });
 
   const [isLoading, setIsLoading] = useState(true);
@@ -44,17 +37,11 @@ export default function SettingsScreen() {
       const savedSettings = await AsyncStorage.multiGet([
         STORAGE_KEYS.THEME,
         STORAGE_KEYS.NOTIFICATIONS,
-        STORAGE_KEYS.VOICE_ENABLED,
-        STORAGE_KEYS.VOICE_LANGUAGE,
-        STORAGE_KEYS.VOICE_SPEED,
       ]);
 
       const newSettings: SettingsState = {
         theme: (savedSettings[0][1] as "light" | "dark" | "auto") || "auto",
         notificationsEnabled: savedSettings[1][1] !== "false",
-        voiceEnabled: savedSettings[2][1] === "true",
-        voiceLanguage: savedSettings[3][1] || "en",
-        voiceSpeed: parseFloat(savedSettings[4][1] || "1.0"),
       };
 
       setSettings(newSettings);
@@ -65,7 +52,7 @@ export default function SettingsScreen() {
     }
   };
 
-  const saveSetting = async (key: string, value: string | boolean | number) => {
+  const saveSetting = async (key: string, value: string | boolean) => {
     try {
       await AsyncStorage.setItem(key, String(value));
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -85,25 +72,10 @@ export default function SettingsScreen() {
     saveSetting(STORAGE_KEYS.NOTIFICATIONS, value);
   };
 
-  const handleVoiceToggle = (value: boolean) => {
-    setSettings((prev) => ({ ...prev, voiceEnabled: value }));
-    saveSetting(STORAGE_KEYS.VOICE_ENABLED, value);
-  };
-
-  const handleVoiceLanguageChange = (language: string) => {
-    setSettings((prev) => ({ ...prev, voiceLanguage: language }));
-    saveSetting(STORAGE_KEYS.VOICE_LANGUAGE, language);
-  };
-
-  const handleVoiceSpeedChange = (speed: number) => {
-    setSettings((prev) => ({ ...prev, voiceSpeed: speed }));
-    saveSetting(STORAGE_KEYS.VOICE_SPEED, speed);
-  };
-
   const handleClearData = () => {
     Alert.alert(
       "Clear All Data",
-      "Are you sure you want to clear all app data? This cannot be undone.",
+      "Are you sure you want to clear all app data including chat history? This cannot be undone.",
       [
         { text: "Cancel", onPress: () => {} },
         {
@@ -240,157 +212,6 @@ export default function SettingsScreen() {
             </Text>
           </View>
 
-          {/* Voice Settings */}
-          <View>
-            <View className="flex-row items-center justify-between mb-3">
-              <View className="flex-row items-center gap-2">
-                <MaterialIcons
-                  name="mic"
-                  size={20}
-                  color={colors.primary}
-                />
-                <Text className="text-lg font-semibold text-foreground">
-                  Voice Features
-                </Text>
-              </View>
-              <Switch
-                value={settings.voiceEnabled}
-                onValueChange={handleVoiceToggle}
-                trackColor={{ false: colors.border, true: colors.primary + "50" }}
-                thumbColor={
-                  settings.voiceEnabled ? colors.primary : colors.muted
-                }
-              />
-            </View>
-
-            {settings.voiceEnabled && (
-              <View className="gap-4 mt-3">
-                {/* Voice Language */}
-                <View>
-                  <Text className="text-sm font-semibold text-foreground mb-2">
-                    Language
-                  </Text>
-                  <View className="gap-2">
-                    {[
-                      { value: "en", label: "English" },
-                      { value: "es", label: "Spanish" },
-                      { value: "fr", label: "French" },
-                      { value: "de", label: "German" },
-                      { value: "hi", label: "Hindi" },
-                      { value: "ar", label: "Arabic" },
-                    ].map((lang) => (
-                      <Pressable
-                        key={lang.value}
-                        onPress={() => handleVoiceLanguageChange(lang.value)}
-                        style={({ pressed }) => [
-                          { opacity: pressed ? 0.7 : 1 },
-                        ]}
-                      >
-                        <View
-                          className="p-3 rounded-lg border flex-row justify-between items-center"
-                          style={{
-                            borderColor:
-                              settings.voiceLanguage === lang.value
-                                ? colors.primary
-                                : colors.border,
-                            backgroundColor:
-                              settings.voiceLanguage === lang.value
-                                ? colors.primary + "10"
-                                : colors.surface,
-                          }}
-                        >
-                          <Text
-                            className="text-sm font-medium"
-                            style={{
-                              color:
-                                settings.voiceLanguage === lang.value
-                                  ? colors.primary
-                                  : colors.foreground,
-                            }}
-                          >
-                            {lang.label}
-                          </Text>
-                          {settings.voiceLanguage === lang.value && (
-                            <MaterialIcons
-                              name="check"
-                              size={16}
-                              color={colors.primary}
-                            />
-                          )}
-                        </View>
-                      </Pressable>
-                    ))}
-                  </View>
-                </View>
-
-                {/* Voice Speed */}
-                <View>
-                  <View className="flex-row justify-between items-center mb-2">
-                    <Text className="text-sm font-semibold text-foreground">
-                      Playback Speed
-                    </Text>
-                    <Text
-                      className="text-sm font-semibold"
-                      style={{ color: colors.primary }}
-                    >
-                      {settings.voiceSpeed.toFixed(1)}x
-                    </Text>
-                  </View>
-                  <View className="gap-2">
-                    {[0.75, 1.0, 1.25, 1.5].map((speed) => (
-                      <Pressable
-                        key={speed}
-                        onPress={() => handleVoiceSpeedChange(speed)}
-                        style={({ pressed }) => [
-                          { opacity: pressed ? 0.7 : 1 },
-                        ]}
-                      >
-                        <View
-                          className="p-3 rounded-lg border flex-row justify-between items-center"
-                          style={{
-                            borderColor:
-                              settings.voiceSpeed === speed
-                                ? colors.primary
-                                : colors.border,
-                            backgroundColor:
-                              settings.voiceSpeed === speed
-                                ? colors.primary + "10"
-                                : colors.surface,
-                          }}
-                        >
-                          <Text
-                            className="text-sm font-medium"
-                            style={{
-                              color:
-                                settings.voiceSpeed === speed
-                                  ? colors.primary
-                                  : colors.foreground,
-                            }}
-                          >
-                            {speed === 0.75
-                              ? "Slow"
-                              : speed === 1.0
-                                ? "Normal"
-                                : speed === 1.25
-                                  ? "Fast"
-                                  : "Very Fast"}
-                          </Text>
-                          {settings.voiceSpeed === speed && (
-                            <MaterialIcons
-                              name="check"
-                              size={16}
-                              color={colors.primary}
-                            />
-                          )}
-                        </View>
-                      </Pressable>
-                    ))}
-                  </View>
-                </View>
-              </View>
-            )}
-          </View>
-
           {/* About Section */}
           <View>
             <View className="flex-row items-center gap-2 mb-3">
@@ -478,7 +299,7 @@ export default function SettingsScreen() {
           {/* Footer */}
           <View className="items-center gap-2 py-4">
             <Text className="text-xs text-muted text-center">
-              Made with ❤️ for students
+              Made with ❤️ By Rathir Aabid
             </Text>
             <Text className="text-xs text-muted text-center">
               © 2026 StudyAI. All rights reserved.

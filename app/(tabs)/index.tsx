@@ -6,6 +6,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  Share,
+  Alert,
 } from "react-native";
 import { useRef, useEffect, useState } from "react";
 import { ScreenContainer } from "@/components/screen-container";
@@ -13,11 +15,13 @@ import { useColors } from "@/hooks/use-colors";
 import { useAIChat } from "@/hooks/use-ai-chat";
 import { MaterialIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import * as Clipboard from "expo-clipboard";
 
 export default function ChatScreen() {
   const colors = useColors();
   const { messages, isLoading, sendMessage, error, clearMessages } = useAIChat();
   const [inputText, setInputText] = useState("");
+  const [selectedMessageIndex, setSelectedMessageIndex] = useState<number | null>(null);
   const flatListRef = useRef<FlatList>(null);
 
   const handleSendMessage = async () => {
@@ -33,42 +37,120 @@ export default function ChatScreen() {
     await sendMessage(messageText);
   };
 
+  const handleCopyMessage = async (content: string) => {
+    try {
+      await Clipboard.setStringAsync(content);
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Alert.alert("Copied", "Message copied to clipboard");
+    } catch (error) {
+      Alert.alert("Error", "Failed to copy message");
+    }
+  };
+
+  const handleShareMessage = async (content: string) => {
+    try {
+      await Share.share({
+        message: content,
+        title: "StudyAI Message",
+      });
+    } catch (error) {
+      console.error("Error sharing:", error);
+    }
+  };
+
   const renderMessage = ({
     item,
+    index,
   }: {
     item: { role: "user" | "assistant"; content: string };
+    index: number;
   }) => {
     const isUser = item.role === "user";
+    const isSelected = selectedMessageIndex === index;
+
     return (
-      <View
-        className={`flex-row mb-4 px-4 ${isUser ? "justify-end" : "justify-start"}`}
+      <Pressable
+        onLongPress={() => setSelectedMessageIndex(isSelected ? null : index)}
+        onPress={() => setSelectedMessageIndex(null)}
+        style={{ opacity: 1 }}
       >
         <View
-          className={`max-w-xs rounded-3xl px-5 py-3 ${
-            isUser ? "bg-primary" : "bg-surface border border-border"
-          }`}
-          style={{
-            backgroundColor: isUser ? colors.primary : colors.surface,
-            borderColor: isUser ? colors.primary : colors.border,
-            shadowColor: colors.foreground,
-            shadowOffset: { width: 0, height: 1 },
-            shadowOpacity: 0.1,
-            shadowRadius: 2,
-            elevation: 2,
-          }}
+          className={`flex-row mb-4 px-4 ${isUser ? "justify-end" : "justify-start"}`}
         >
-          <Text
-            className={`text-base leading-relaxed ${
-              isUser ? "text-white" : "text-foreground"
+          <View
+            className={`max-w-xs rounded-3xl px-5 py-3 ${
+              isUser ? "bg-primary" : "bg-surface border border-border"
             }`}
             style={{
-              color: isUser ? "#FFFFFF" : colors.foreground,
+              backgroundColor: isUser ? colors.primary : colors.surface,
+              borderColor: isUser ? colors.primary : colors.border,
+              shadowColor: colors.foreground,
+              shadowOffset: { width: 0, height: 1 },
+              shadowOpacity: 0.1,
+              shadowRadius: 2,
+              elevation: 2,
             }}
           >
-            {item.content}
-          </Text>
+            <Text
+              className={`text-base leading-relaxed ${
+                isUser ? "text-white" : "text-foreground"
+              }`}
+              style={{
+                color: isUser ? "#FFFFFF" : colors.foreground,
+              }}
+            >
+              {item.content}
+            </Text>
+
+            {/* Message Actions */}
+            {isSelected && (
+              <View className="flex-row gap-2 mt-3 pt-3 border-t" style={{ borderColor: isUser ? "#FFFFFF" : colors.border }}>
+                <Pressable
+                  onPress={() => handleCopyMessage(item.content)}
+                  style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
+                >
+                  <View className="flex-row items-center gap-1">
+                    <MaterialIcons
+                      name="content-copy"
+                      size={14}
+                      color={isUser ? "#FFFFFF" : colors.primary}
+                    />
+                    <Text
+                      className="text-xs font-semibold"
+                      style={{
+                        color: isUser ? "#FFFFFF" : colors.primary,
+                      }}
+                    >
+                      Copy
+                    </Text>
+                  </View>
+                </Pressable>
+
+                <Pressable
+                  onPress={() => handleShareMessage(item.content)}
+                  style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
+                >
+                  <View className="flex-row items-center gap-1">
+                    <MaterialIcons
+                      name="share"
+                      size={14}
+                      color={isUser ? "#FFFFFF" : colors.primary}
+                    />
+                    <Text
+                      className="text-xs font-semibold"
+                      style={{
+                        color: isUser ? "#FFFFFF" : colors.primary,
+                      }}
+                    >
+                      Share
+                    </Text>
+                  </View>
+                </Pressable>
+              </View>
+            )}
+          </View>
         </View>
-      </View>
+      </Pressable>
     );
   };
 
