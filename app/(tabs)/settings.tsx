@@ -1,31 +1,28 @@
-import { ScrollView, Text, View, Pressable, Switch, Alert } from "react-native";
+import { ScrollView, Text, View, Pressable } from "react-native";
 import { useState, useEffect } from "react";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { MaterialIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
+import { MaterialDialog } from "@/components/ui/material-dialog";
 
 const STORAGE_KEYS = {
   THEME: "studyai_theme",
-  NOTIFICATIONS: "studyai_notifications",
 };
 
 interface SettingsState {
   theme: "light" | "dark" | "auto";
-  notificationsEnabled: boolean;
 }
 
 export default function SettingsScreen() {
   const colors = useColors();
-  const colorScheme = useColorScheme();
   const [settings, setSettings] = useState<SettingsState>({
     theme: "auto",
-    notificationsEnabled: true,
   });
 
   const [isLoading, setIsLoading] = useState(true);
+  const [showClearDialog, setShowClearDialog] = useState(false);
 
   // Load settings from AsyncStorage on mount
   useEffect(() => {
@@ -36,12 +33,10 @@ export default function SettingsScreen() {
     try {
       const savedSettings = await AsyncStorage.multiGet([
         STORAGE_KEYS.THEME,
-        STORAGE_KEYS.NOTIFICATIONS,
       ]);
 
       const newSettings: SettingsState = {
         theme: (savedSettings[0][1] as "light" | "dark" | "auto") || "auto",
-        notificationsEnabled: savedSettings[1][1] !== "false",
       };
 
       setSettings(newSettings);
@@ -58,7 +53,6 @@ export default function SettingsScreen() {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } catch (error) {
       console.error("Failed to save setting:", error);
-      Alert.alert("Error", "Failed to save settings");
     }
   };
 
@@ -67,32 +61,15 @@ export default function SettingsScreen() {
     saveSetting(STORAGE_KEYS.THEME, theme);
   };
 
-  const handleNotificationsToggle = (value: boolean) => {
-    setSettings((prev) => ({ ...prev, notificationsEnabled: value }));
-    saveSetting(STORAGE_KEYS.NOTIFICATIONS, value);
-  };
-
-  const handleClearData = () => {
-    Alert.alert(
-      "Clear All Data",
-      "Are you sure you want to clear all app data including chat history? This cannot be undone.",
-      [
-        { text: "Cancel", onPress: () => {} },
-        {
-          text: "Clear",
-          onPress: async () => {
-            try {
-              await AsyncStorage.clear();
-              Alert.alert("Success", "All data cleared");
-              await loadSettings();
-            } catch (error) {
-              Alert.alert("Error", "Failed to clear data");
-            }
-          },
-          style: "destructive",
-        },
-      ]
-    );
+  const handleClearData = async () => {
+    try {
+      await AsyncStorage.clear();
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setShowClearDialog(false);
+      await loadSettings();
+    } catch (error) {
+      console.error("Failed to clear data:", error);
+    }
   };
 
   if (isLoading) {
@@ -182,36 +159,6 @@ export default function SettingsScreen() {
             </View>
           </View>
 
-          {/* Notification Settings */}
-          <View>
-            <View className="flex-row items-center justify-between mb-3">
-              <View className="flex-row items-center gap-2">
-                <MaterialIcons
-                  name="notifications"
-                  size={20}
-                  color={colors.primary}
-                />
-                <Text className="text-lg font-semibold text-foreground">
-                  Notifications
-                </Text>
-              </View>
-              <Switch
-                value={settings.notificationsEnabled}
-                onValueChange={handleNotificationsToggle}
-                trackColor={{ false: colors.border, true: colors.primary + "50" }}
-                thumbColor={
-                  settings.notificationsEnabled ? colors.primary : colors.muted
-                }
-              />
-            </View>
-            <Text
-              className="text-sm text-muted px-2"
-              style={{ color: colors.muted }}
-            >
-              Receive notifications for new study tips and reminders
-            </Text>
-          </View>
-
           {/* About Section */}
           <View>
             <View className="flex-row items-center gap-2 mb-3">
@@ -264,7 +211,7 @@ export default function SettingsScreen() {
             </View>
 
             <Pressable
-              onPress={handleClearData}
+              onPress={() => setShowClearDialog(true)}
               style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
             >
               <View
@@ -307,6 +254,18 @@ export default function SettingsScreen() {
           </View>
         </View>
       </ScrollView>
+
+      {/* Clear Data Dialog */}
+      <MaterialDialog
+        visible={showClearDialog}
+        title="Clear All Data"
+        message="Are you sure you want to clear all app data including chat history? This cannot be undone."
+        confirmText="Clear"
+        cancelText="Cancel"
+        isDangerous={true}
+        onConfirm={handleClearData}
+        onCancel={() => setShowClearDialog(false)}
+      />
     </ScreenContainer>
   );
 }

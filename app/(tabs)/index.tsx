@@ -7,7 +7,7 @@ import {
   Platform,
   Pressable,
   Share,
-  Alert,
+  ScrollView,
 } from "react-native";
 import { useRef, useEffect, useState } from "react";
 import { ScreenContainer } from "@/components/screen-container";
@@ -16,12 +16,28 @@ import { useAIChat } from "@/hooks/use-ai-chat";
 import { MaterialIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as Clipboard from "expo-clipboard";
+import { MaterialDialog } from "@/components/ui/material-dialog";
+
+const SUBJECTS = [
+  { id: "math", label: "Math", icon: "calculate" },
+  { id: "science", label: "Science", icon: "science" },
+  { id: "physics", label: "Physics", icon: "bolt" },
+  { id: "chemistry", label: "Chemistry", icon: "local-fire-department" },
+  { id: "biology", label: "Biology", icon: "eco" },
+  { id: "english", label: "English", icon: "language" },
+  { id: "history", label: "History", icon: "history" },
+  { id: "geography", label: "Geography", icon: "public" },
+  { id: "islamic", label: "Islamic", icon: "menu-book" },
+];
 
 export default function ChatScreen() {
   const colors = useColors();
   const { messages, isLoading, sendMessage, error, clearMessages } = useAIChat();
   const [inputText, setInputText] = useState("");
   const [selectedMessageIndex, setSelectedMessageIndex] = useState<number | null>(null);
+  const [selectedSubject, setSelectedSubject] = useState("General");
+  const [showCopyDialog, setShowCopyDialog] = useState(false);
+  const [copiedMessage, setCopiedMessage] = useState("");
   const flatListRef = useRef<FlatList>(null);
 
   const handleSendMessage = async () => {
@@ -37,13 +53,19 @@ export default function ChatScreen() {
     await sendMessage(messageText);
   };
 
-  const handleCopyMessage = async (content: string) => {
+  const handleCopyMessage = (content: string) => {
+    setCopiedMessage(content);
+    setShowCopyDialog(true);
+  };
+
+  const confirmCopy = async () => {
     try {
-      await Clipboard.setStringAsync(content);
+      await Clipboard.setStringAsync(copiedMessage);
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert("Copied", "Message copied to clipboard");
+      setShowCopyDialog(false);
+      setCopiedMessage("");
     } catch (error) {
-      Alert.alert("Error", "Failed to copy message");
+      console.error("Failed to copy:", error);
     }
   };
 
@@ -220,8 +242,7 @@ export default function ChatScreen() {
             className="text-base text-muted text-center leading-relaxed"
             style={{ color: colors.muted }}
           >
-            Ask me anything about Math, Science, Physics, Chemistry, Biology,
-            English, History, Geography, or Islamic Studies
+            Ask me anything about {selectedSubject}
           </Text>
         </View>
       </View>
@@ -232,6 +253,7 @@ export default function ChatScreen() {
     <ScreenContainer className="bg-background flex-1">
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
         className="flex-1"
       >
         {/* Header */}
@@ -242,7 +264,7 @@ export default function ChatScreen() {
           <View>
             <Text className="text-2xl font-bold text-foreground">StudyAI</Text>
             <Text className="text-xs text-muted mt-0.5">
-              Your AI Study Assistant
+              {selectedSubject}
             </Text>
           </View>
           {messages.length > 0 && (
@@ -258,6 +280,60 @@ export default function ChatScreen() {
             </Pressable>
           )}
         </View>
+
+        {/* Subject Shortcuts */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          className="border-b border-border px-2 py-2"
+          style={{ backgroundColor: colors.background }}
+          scrollEventThrottle={16}
+        >
+          <View className="flex-row gap-2">
+            {SUBJECTS.map((subject) => (
+              <Pressable
+                key={subject.id}
+                onPress={() => setSelectedSubject(subject.label)}
+                style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
+              >
+                <View
+                  className="px-4 py-2 rounded-full border flex-row items-center gap-2"
+                  style={{
+                    borderColor:
+                      selectedSubject === subject.label
+                        ? colors.primary
+                        : colors.border,
+                    backgroundColor:
+                      selectedSubject === subject.label
+                        ? colors.primary + "15"
+                        : colors.surface,
+                  }}
+                >
+                  <MaterialIcons
+                    name={subject.icon as any}
+                    size={16}
+                    color={
+                      selectedSubject === subject.label
+                        ? colors.primary
+                        : colors.muted
+                    }
+                  />
+                  <Text
+                    className="text-sm font-semibold"
+                    style={{
+                      color:
+                        selectedSubject === subject.label
+                          ? colors.primary
+                          : colors.foreground,
+                    }}
+                  >
+                    {subject.label}
+                  </Text>
+                </View>
+              </Pressable>
+            ))}
+          </View>
+        </ScrollView>
 
         {/* Messages List */}
         {renderError()}
@@ -329,6 +405,20 @@ export default function ChatScreen() {
           </View>
         </View>
       </KeyboardAvoidingView>
+
+      {/* Copy Dialog */}
+      <MaterialDialog
+        visible={showCopyDialog}
+        title="Copy Message"
+        message="Copy this message to clipboard?"
+        confirmText="Copy"
+        cancelText="Cancel"
+        onConfirm={confirmCopy}
+        onCancel={() => {
+          setShowCopyDialog(false);
+          setCopiedMessage("");
+        }}
+      />
     </ScreenContainer>
   );
 }

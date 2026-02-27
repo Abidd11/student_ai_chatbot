@@ -153,3 +153,15 @@
 - [x] Test message persistence across app restarts
 - [x] Test theme switching functionality
 - [x] Test copy message feature
+
+
+## Latest User Requests
+- [x] Add subject shortcuts (Math, Science, Physics, Chemistry, Biology, English, History, Geography, Islamic Studies)
+- [x] Fix keyboard not appearing when entering message bar
+- [x] Implement keyboard-aware behavior for input area
+- [x] Remove notification settings from settings screen
+- [x] Create Material Design dialog for copy message confirmation
+- [x] Create Material Design dialog for clear data confirmation
+- [x] Test subject shortcuts functionality
+- [x] Test keyboard behavior with message input
+- [x] Test Material dialogs on all platforms
