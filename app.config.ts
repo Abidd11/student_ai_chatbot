@@ -28,11 +28,11 @@ const schemeFromBundleId = `manus${timestamp}`;
 
 const env = {
   // App branding - update these values directly (do not use env vars)
-  appName: "Student AI Chatbot",
+  appName: "StudyAI",
   appSlug: "student_ai_chatbot",
   // S3 URL of the app logo - set this to the URL returned by generate_image when creating custom logo
   // Leave empty to use the default icon from assets/images/icon.png
-  logoUrl: "",
+  logoUrl: "https://private-us-east-1.manuscdn.com/sessionFile/NpfN3qCsuQTZFN8CaMN6Pw/sandbox/EpLRkqSBxNU0ADlB2UGNxW-img-1_1772091148000_na1fn_aWNvbg.png?x-oss-process=image/resize,w_1920,h_1920/format,webp/quality,q_80&Expires=1798761600&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly9wcml2YXRlLXVzLWVhc3QtMS5tYW51c2Nkbi5jb20vc2Vzc2lvbkZpbGUvTnBmTjNxQ3N1UVRaRk44Q2FNTjZQdy9zYW5kYm94L0VwTFJrcVNCeE5VMEFEbEIyVUdOeFctaW1nLTFfMTc3MjA5MTE0ODAwMF9uYTFmbl9hV052YmcucG5nP3gtb3NzLXByb2Nlc3M9aW1hZ2UvcmVzaXplLHdfMTkyMCxoXzE5MjAvZm9ybWF0LHdlYnAvcXVhbGl0eSxxXzgwIiwiQ29uZGl0aW9uIjp7IkRhdGVMZXNzVGhhbiI6eyJBV1M6RXBvY2hUaW1lIjoxNzk4NzYxNjAwfX19XX0_&Key-Pair-Id=K2HSFNDJXOU9YS&Signature=KaaO-JlWUKqJHmcxjEDvowT4l67Zi2ebBZus8DC0pkcSswor1NfPhlwDsBCVM~oXzRxdB8wkJV4x4Sy39ZgrJYeQwBXjVMHJnHN1-iwx9HXOotq2XHMlA8fg3BBuDuhcpIbptMR6KaZ0ATibt504n2jgjAjPIG8J9m1jbitivN3-arcosnFtv5oUX4VpKQ7XddpjcA~HEg2dFVFwzclKh0fymlm37NxOAfMlrvvg7LevWvL2sgVS8tDGTNH2QsaM2dS4ySdW-ev6TierHOySbQG~7LAmtMybegnYQcW0t90~MNhexn0ouqJ53msCx2fsnXHeXf2-1Zzk85AKSbxIhg__",
   scheme: schemeFromBundleId,
   iosBundleId: bundleId,
   androidPackage: bundleId,
