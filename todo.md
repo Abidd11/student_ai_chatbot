@@ -177,3 +177,16 @@
 - [x] Test subject shortcuts work correctly
 - [x] Test keyboard appears when typing
 - [x] Test WhatsApp dialog shows only once
+
+
+## Final Refinements - User Requests
+- [x] Update WhatsApp dialog link to https://whatsapp.com/channel/0029VajKhZ0JENy2l6mBt817
+- [x] Update JKBose Helper link to https://jk-bose-helper.vercel.app/
+- [x] Fix subject shortcuts functionality
+- [x] Fix typing bar keyboard visibility
+- [x] Remove "Built with" text from settings
+- [x] Change "Rathir Aabid" to "Rather Aabid"
+- [x] Test WhatsApp link opens correctly
+- [x] Test JKBose Helper link opens correctly
+- [x] Test subject shortcuts work properly
+- [x] Test typing bar appears when typing
