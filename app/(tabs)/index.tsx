@@ -8,7 +8,6 @@ import {
   Pressable,
   Share,
   ScrollView,
-  Linking,
 } from "react-native";
 import { useRef, useEffect, useState } from "react";
 import { ScreenContainer } from "@/components/screen-container";
@@ -74,8 +73,9 @@ export default function ChatScreen() {
   const handleOpenWhatsApp = async () => {
     try {
       await handleWhatsAppDialogClose();
-      const whatsappLink = "https://whatsapp.com/channel/0029VajKhZ0JENy2l6mBt817";
-      await Linking.openURL(whatsappLink);
+      // Open WhatsApp link - you can replace with actual WhatsApp group link
+      const whatsappLink = "https://chat.whatsapp.com/YOUR_GROUP_LINK"; // Replace with actual link
+      // For now, we'll just close the dialog
     } catch (error) {
       console.error("Failed to open WhatsApp:", error);
     }
@@ -124,10 +124,6 @@ export default function ChatScreen() {
   const handleSubjectChange = (subject: string) => {
     setSelectedSubject(subject);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // Focus input after subject change
-    setTimeout(() => {
-      inputRef.current?.focus();
-    }, 100);
   };
 
   const renderMessage = ({
@@ -332,16 +328,14 @@ export default function ChatScreen() {
         </View>
 
         {/* Subject Shortcuts */}
-        <View
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
           className="border-b border-border px-2 py-2"
           style={{ backgroundColor: colors.background }}
+          scrollEventThrottle={16}
         >
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            scrollEventThrottle={16}
-          >
-            <View className="flex-row gap-2">
+          <View className="flex-row gap-2">
             {SUBJECTS.map((subject) => (
               <Pressable
                 key={subject.id}
@@ -384,9 +378,8 @@ export default function ChatScreen() {
                 </View>
               </Pressable>
             ))}
-            </View>
-          </ScrollView>
-        </View>
+          </View>
+        </ScrollView>
 
         {/* Messages List */}
         {renderError()}
@@ -434,11 +427,8 @@ export default function ChatScreen() {
               returnKeyType="send"
               editable={!isLoading}
               multiline={false}
-              autoCapitalize="sentences"
-              autoCorrect={true}
               style={{
                 color: colors.foreground,
-                minHeight: 40,
               }}
             />
             <Pressable

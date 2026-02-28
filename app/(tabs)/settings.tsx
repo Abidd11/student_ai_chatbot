@@ -75,7 +75,8 @@ export default function SettingsScreen() {
   const handleDownloadJKBose = async () => {
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      const downloadLink = "https://jk-bose-helper.vercel.app/";
+      // Replace with actual JKBose Helper app download link
+      const downloadLink = "https://play.google.com/store/apps/details?id=com.jkbose.helper";
       await Linking.openURL(downloadLink);
     } catch (error) {
       console.error("Failed to open download link:", error);
@@ -257,7 +258,12 @@ export default function SettingsScreen() {
                   1.0.0
                 </Text>
               </View>
-
+              <View className="flex-row justify-between">
+                <Text className="text-sm text-muted">Built with</Text>
+                <Text className="text-sm font-semibold text-foreground">
+                  React Native
+                </Text>
+              </View>
             </View>
           </View>
 
@@ -310,7 +316,7 @@ export default function SettingsScreen() {
           {/* Footer */}
           <View className="items-center gap-2 py-4">
             <Text className="text-xs text-muted text-center">
-              Made with ❤️ By Rather Aabid
+              Made with ❤️ By Rathir Aabid
             </Text>
             <Text className="text-xs text-muted text-center">
               © 2026 StudyAI. All rights reserved.
