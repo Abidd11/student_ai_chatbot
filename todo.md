@@ -177,3 +177,14 @@
 - [x] Test subject shortcuts work correctly
 - [x] Test keyboard appears when typing
 - [x] Test WhatsApp dialog shows only once
+
+## v1.0.5 - Final Refinements
+- [x] Fix input bar keyboard overlap issue with KeyboardAvoidingView
+- [x] Add daily study reminders with notifications
+- [x] Add JKBose Helper logo in settings
+- [x] Update WhatsApp dialog to show every 24 hours
+- [x] Implement study reminders hook with notification scheduling
+- [x] Add reminders toggle in settings
+- [x] Test all features working correctly
+- [x] All 6 unit tests passing
+- [x] Zero TypeScript errors

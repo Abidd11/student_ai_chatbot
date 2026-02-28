@@ -1,4 +1,4 @@
-import { ScrollView, Text, View, Pressable, Linking } from "react-native";
+import { ScrollView, Text, View, Pressable, Linking, Image, Switch } from "react-native";
 import { useState, useEffect } from "react";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
@@ -6,6 +6,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
 import { MaterialDialog } from "@/components/ui/material-dialog";
+import { useStudyReminders } from "@/hooks/use-study-reminders";
 
 const STORAGE_KEYS = {
   THEME: "studyai_theme",
@@ -13,18 +14,20 @@ const STORAGE_KEYS = {
 
 interface SettingsState {
   theme: "light" | "dark" | "auto";
+  remindersEnabled: boolean;
 }
 
 export default function SettingsScreen() {
   const colors = useColors();
+  const { enableReminders, disableReminders } = useStudyReminders();
   const [settings, setSettings] = useState<SettingsState>({
     theme: "auto",
+    remindersEnabled: false,
   });
 
   const [isLoading, setIsLoading] = useState(true);
   const [showClearDialog, setShowClearDialog] = useState(false);
 
-  // Load settings from AsyncStorage on mount
   useEffect(() => {
     loadSettings();
   }, []);
@@ -33,10 +36,12 @@ export default function SettingsScreen() {
     try {
       const savedSettings = await AsyncStorage.multiGet([
         STORAGE_KEYS.THEME,
+        "studyai_reminders_enabled",
       ]);
 
       const newSettings: SettingsState = {
         theme: (savedSettings[0][1] as "light" | "dark" | "auto") || "auto",
+        remindersEnabled: savedSettings[1][1] === "true",
       };
 
       setSettings(newSettings);
@@ -61,6 +66,16 @@ export default function SettingsScreen() {
     saveSetting(STORAGE_KEYS.THEME, theme);
   };
 
+  const handleRemindersToggle = async (value: boolean) => {
+    setSettings((prev) => ({ ...prev, remindersEnabled: value }));
+    await saveSetting("studyai_reminders_enabled", value);
+    if (value) {
+      await enableReminders();
+    } else {
+      await disableReminders();
+    }
+  };
+
   const handleClearData = async () => {
     try {
       await AsyncStorage.clear();
@@ -75,8 +90,7 @@ export default function SettingsScreen() {
   const handleDownloadJKBose = async () => {
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      // Replace with actual JKBose Helper app download link
-      const downloadLink = "https://play.google.com/store/apps/details?id=com.jkbose.helper";
+      const downloadLink = "https://jk-bose-helper.vercel.app/";
       await Linking.openURL(downloadLink);
     } catch (error) {
       console.error("Failed to open download link:", error);
@@ -170,6 +184,60 @@ export default function SettingsScreen() {
             </View>
           </View>
 
+          {/* Study Reminders */}
+          <View>
+            <View className="flex-row items-center gap-2 mb-3">
+              <MaterialIcons
+                name="notifications-active"
+                size={20}
+                color={colors.primary}
+              />
+              <Text className="text-lg font-semibold text-foreground">
+                Study Reminders
+              </Text>
+            </View>
+
+            <View
+              className="p-4 rounded-lg border-2 flex-row items-center justify-between"
+              style={{
+                borderColor: settings.remindersEnabled
+                  ? colors.primary
+                  : colors.border,
+                backgroundColor: settings.remindersEnabled
+                  ? colors.primary + "10"
+                  : colors.surface,
+              }}
+            >
+              <View className="flex-1">
+                <Text
+                  className="text-base font-semibold"
+                  style={{
+                    color: settings.remindersEnabled
+                      ? colors.primary
+                      : colors.foreground,
+                  }}
+                >
+                  Daily Study Reminders
+                </Text>
+                <Text
+                  className="text-xs text-muted mt-1"
+                  style={{ color: colors.muted }}
+                >
+                  Get motivated to study every day
+                </Text>
+              </View>
+              <Switch
+                value={settings.remindersEnabled}
+                onValueChange={handleRemindersToggle}
+                trackColor={{
+                  false: colors.border,
+                  true: colors.primary + "50",
+                }}
+                thumbColor={settings.remindersEnabled ? colors.primary : colors.muted}
+              />
+            </View>
+          </View>
+
           {/* Downloads Section */}
           <View>
             <View className="flex-row items-center gap-2 mb-3">
@@ -196,13 +264,15 @@ export default function SettingsScreen() {
               >
                 <View className="flex-row items-center gap-3 flex-1">
                   <View
-                    className="w-12 h-12 rounded-lg items-center justify-center"
+                    className="w-12 h-12 rounded-lg items-center justify-center overflow-hidden"
                     style={{ backgroundColor: colors.primary }}
                   >
-                    <MaterialIcons
-                      name="school"
-                      size={24}
-                      color="#FFFFFF"
+                    <Image
+                      source={{
+                        uri: "https://i.ibb.co/ksbcSkSY/IMG-20250719-234144-401.jpg",
+                      }}
+                      style={{ width: 48, height: 48 }}
+                      resizeMode="cover"
                     />
                   </View>
                   <View className="flex-1">
@@ -255,13 +325,7 @@ export default function SettingsScreen() {
               <View className="flex-row justify-between">
                 <Text className="text-sm text-muted">Version</Text>
                 <Text className="text-sm font-semibold text-foreground">
-                  1.0.0
-                </Text>
-              </View>
-              <View className="flex-row justify-between">
-                <Text className="text-sm text-muted">Built with</Text>
-                <Text className="text-sm font-semibold text-foreground">
-                  React Native
+                  1.0.5
                 </Text>
               </View>
             </View>
@@ -316,7 +380,7 @@ export default function SettingsScreen() {
           {/* Footer */}
           <View className="items-center gap-2 py-4">
             <Text className="text-xs text-muted text-center">
-              Made with ❤️ By Rathir Aabid
+              Made with ❤️ By Rather Aabid
             </Text>
             <Text className="text-xs text-muted text-center">
               © 2026 StudyAI. All rights reserved.

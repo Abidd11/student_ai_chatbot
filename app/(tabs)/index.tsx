@@ -8,6 +8,7 @@ import {
   Pressable,
   Share,
   ScrollView,
+  Linking,
 } from "react-native";
 import { useRef, useEffect, useState } from "react";
 import { ScreenContainer } from "@/components/screen-container";
@@ -31,7 +32,8 @@ const SUBJECTS = [
   { id: "islamic", label: "Islamic", icon: "menu-book" },
 ];
 
-const WHATSAPP_DIALOG_KEY = "studyai_whatsapp_shown";
+const WHATSAPP_DIALOG_KEY = "studyai_whatsapp_last_shown";
+const WHATSAPP_DIALOG_INTERVAL = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
 export default function ChatScreen() {
   const colors = useColors();
@@ -45,16 +47,25 @@ export default function ChatScreen() {
   const flatListRef = useRef<FlatList>(null);
   const inputRef = useRef<TextInput>(null);
 
-  // Check if WhatsApp dialog has been shown before
+  // Check if WhatsApp dialog should be shown (every 24 hours)
   useEffect(() => {
     checkWhatsAppDialog();
   }, []);
 
   const checkWhatsAppDialog = async () => {
     try {
-      const shown = await AsyncStorage.getItem(WHATSAPP_DIALOG_KEY);
-      if (!shown) {
+      const lastShown = await AsyncStorage.getItem(WHATSAPP_DIALOG_KEY);
+      const now = Date.now();
+      
+      if (!lastShown) {
+        // First time - show dialog
         setShowWhatsAppDialog(true);
+      } else {
+        const lastShownTime = parseInt(lastShown, 10);
+        // Show dialog if more than 24 hours have passed
+        if (now - lastShownTime > WHATSAPP_DIALOG_INTERVAL) {
+          setShowWhatsAppDialog(true);
+        }
       }
     } catch (error) {
       console.error("Failed to check WhatsApp dialog:", error);
@@ -63,7 +74,7 @@ export default function ChatScreen() {
 
   const handleWhatsAppDialogClose = async () => {
     try {
-      await AsyncStorage.setItem(WHATSAPP_DIALOG_KEY, "true");
+      await AsyncStorage.setItem(WHATSAPP_DIALOG_KEY, Date.now().toString());
       setShowWhatsAppDialog(false);
     } catch (error) {
       console.error("Failed to save WhatsApp dialog state:", error);
@@ -73,9 +84,8 @@ export default function ChatScreen() {
   const handleOpenWhatsApp = async () => {
     try {
       await handleWhatsAppDialogClose();
-      // Open WhatsApp link - you can replace with actual WhatsApp group link
-      const whatsappLink = "https://chat.whatsapp.com/YOUR_GROUP_LINK"; // Replace with actual link
-      // For now, we'll just close the dialog
+      const whatsappLink = "https://whatsapp.com/channel/0029VajKhZ0JENy2l6mBt817";
+      await Linking.openURL(whatsappLink);
     } catch (error) {
       console.error("Failed to open WhatsApp:", error);
     }
@@ -299,109 +309,112 @@ export default function ChatScreen() {
     <ScreenContainer className="bg-background flex-1">
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
         className="flex-1"
+        style={{ flex: 1 }}
       >
-        {/* Header */}
-        <View
-          className="border-b border-border py-4 px-4 flex-row justify-between items-center"
-          style={{ backgroundColor: colors.background }}
-        >
-          <View>
-            <Text className="text-2xl font-bold text-foreground">StudyAI</Text>
-            <Text className="text-xs text-muted mt-0.5">
-              {selectedSubject}
-            </Text>
+        <View className="flex-1">
+          {/* Header */}
+          <View
+            className="border-b border-border py-4 px-4 flex-row justify-between items-center"
+            style={{ backgroundColor: colors.background }}
+          >
+            <View>
+              <Text className="text-2xl font-bold text-foreground">StudyAI</Text>
+              <Text className="text-xs text-muted mt-0.5">
+                {selectedSubject}
+              </Text>
+            </View>
+            {messages.length > 0 && (
+              <Pressable
+                onPress={clearMessages}
+                style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
+              >
+                <MaterialIcons
+                  name="refresh"
+                  size={24}
+                  color={colors.primary}
+                />
+              </Pressable>
+            )}
           </View>
-          {messages.length > 0 && (
-            <Pressable
-              onPress={clearMessages}
-              style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
-            >
-              <MaterialIcons
-                name="refresh"
-                size={24}
-                color={colors.primary}
-              />
-            </Pressable>
+
+          {/* Subject Shortcuts */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            className="border-b border-border px-2 py-2"
+            style={{ backgroundColor: colors.background }}
+            scrollEventThrottle={16}
+          >
+            <View className="flex-row gap-2">
+              {SUBJECTS.map((subject) => (
+                <Pressable
+                  key={subject.id}
+                  onPress={() => handleSubjectChange(subject.label)}
+                  style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
+                >
+                  <View
+                    className="px-4 py-2 rounded-full border flex-row items-center gap-2"
+                    style={{
+                      borderColor:
+                        selectedSubject === subject.label
+                          ? colors.primary
+                          : colors.border,
+                      backgroundColor:
+                        selectedSubject === subject.label
+                          ? colors.primary + "15"
+                          : colors.surface,
+                    }}
+                  >
+                    <MaterialIcons
+                      name={subject.icon as any}
+                      size={16}
+                      color={
+                        selectedSubject === subject.label
+                          ? colors.primary
+                          : colors.muted
+                      }
+                    />
+                    <Text
+                      className="text-sm font-semibold"
+                      style={{
+                        color:
+                          selectedSubject === subject.label
+                            ? colors.primary
+                            : colors.foreground,
+                      }}
+                    >
+                      {subject.label}
+                    </Text>
+                  </View>
+                </Pressable>
+              ))}
+            </View>
+          </ScrollView>
+
+          {/* Messages List */}
+          {renderError()}
+          {messages.length === 0 ? (
+            renderEmptyState()
+          ) : (
+            <FlatList
+              ref={flatListRef}
+              data={messages}
+              renderItem={renderMessage}
+              keyExtractor={(item, index) => index.toString()}
+              contentContainerStyle={{ paddingVertical: 16 }}
+              onContentSizeChange={() => flatListRef.current?.scrollToEnd()}
+              ListFooterComponent={renderTypingIndicator}
+              scrollEnabled={true}
+              showsVerticalScrollIndicator={false}
+            />
           )}
         </View>
 
-        {/* Subject Shortcuts */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          className="border-b border-border px-2 py-2"
-          style={{ backgroundColor: colors.background }}
-          scrollEventThrottle={16}
-        >
-          <View className="flex-row gap-2">
-            {SUBJECTS.map((subject) => (
-              <Pressable
-                key={subject.id}
-                onPress={() => handleSubjectChange(subject.label)}
-                style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
-              >
-                <View
-                  className="px-4 py-2 rounded-full border flex-row items-center gap-2"
-                  style={{
-                    borderColor:
-                      selectedSubject === subject.label
-                        ? colors.primary
-                        : colors.border,
-                    backgroundColor:
-                      selectedSubject === subject.label
-                        ? colors.primary + "15"
-                        : colors.surface,
-                  }}
-                >
-                  <MaterialIcons
-                    name={subject.icon as any}
-                    size={16}
-                    color={
-                      selectedSubject === subject.label
-                        ? colors.primary
-                        : colors.muted
-                    }
-                  />
-                  <Text
-                    className="text-sm font-semibold"
-                    style={{
-                      color:
-                        selectedSubject === subject.label
-                          ? colors.primary
-                          : colors.foreground,
-                    }}
-                  >
-                    {subject.label}
-                  </Text>
-                </View>
-              </Pressable>
-            ))}
-          </View>
-        </ScrollView>
-
-        {/* Messages List */}
-        {renderError()}
-        {messages.length === 0 ? (
-          renderEmptyState()
-        ) : (
-          <FlatList
-            ref={flatListRef}
-            data={messages}
-            renderItem={renderMessage}
-            keyExtractor={(item, index) => index.toString()}
-            contentContainerStyle={{ paddingVertical: 16, flexGrow: 1 }}
-            onContentSizeChange={() => flatListRef.current?.scrollToEnd()}
-            ListFooterComponent={renderTypingIndicator}
-            scrollEnabled={true}
-            showsVerticalScrollIndicator={false}
-          />
-        )}
-
-        {/* Input Area */}
+        {/* Input Area - Fixed at bottom */}
         <View
-          className="border-t border-border px-4 py-4"
+          className="border-t border-border px-4 py-3"
           style={{ backgroundColor: colors.background }}
         >
           <View
@@ -468,7 +481,7 @@ export default function ChatScreen() {
         }}
       />
 
-      {/* WhatsApp Join Dialog */}
+      {/* WhatsApp Join Dialog - Shows every 24 hours */}
       <MaterialDialog
         visible={showWhatsAppDialog}
         title="Join Our WhatsApp Group"
