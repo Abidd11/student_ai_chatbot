@@ -188,3 +188,16 @@
 - [x] Test all features working correctly
 - [x] All 6 unit tests passing
 - [x] Zero TypeScript errors
+
+
+## v1.0.6 - Bug Fixes & Offline Support
+- [x] Fix subject shortcuts display and functionality
+- [x] Fix welcome text "Welcome to StudyAI" display
+- [x] Fix input bar visibility and keyboard handling
+- [x] Add internet connection detection
+- [x] Add offline UI banner when no internet
+- [x] Disable sending messages when offline
+- [x] Show offline indicator in header
+- [x] Test all fixes on web and mobile
+- [x] All 6 unit tests passing
+- [x] Zero TypeScript errors

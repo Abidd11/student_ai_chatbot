@@ -14,6 +14,7 @@ import { useRef, useEffect, useState } from "react";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { useAIChat } from "@/hooks/use-ai-chat";
+import { useNetwork } from "@/hooks/use-network";
 import { MaterialIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as Clipboard from "expo-clipboard";
@@ -21,6 +22,7 @@ import { MaterialDialog } from "@/components/ui/material-dialog";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const SUBJECTS = [
+  { id: "general", label: "General", icon: "lightbulb" },
   { id: "math", label: "Math", icon: "calculate" },
   { id: "science", label: "Science", icon: "science" },
   { id: "physics", label: "Physics", icon: "bolt" },
@@ -38,6 +40,7 @@ const WHATSAPP_DIALOG_INTERVAL = 24 * 60 * 60 * 1000; // 24 hours in millisecond
 export default function ChatScreen() {
   const colors = useColors();
   const { messages, isLoading, sendMessage, error, clearMessages } = useAIChat();
+  const { isConnected } = useNetwork();
   const [inputText, setInputText] = useState("");
   const [selectedMessageIndex, setSelectedMessageIndex] = useState<number | null>(null);
   const [selectedSubject, setSelectedSubject] = useState("General");
@@ -93,6 +96,10 @@ export default function ChatScreen() {
 
   const handleSendMessage = async () => {
     if (inputText.trim() === "") return;
+    if (!isConnected) {
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      return;
+    }
 
     const messageText = inputText;
     setInputText("");
@@ -276,6 +283,21 @@ export default function ChatScreen() {
     );
   };
 
+  const renderOfflineIndicator = () => {
+    if (isConnected === null || isConnected) return null;
+    return (
+      <View className="mx-4 mb-4 bg-warning bg-opacity-10 border border-warning rounded-2xl p-4 flex-row items-start gap-3">
+        <MaterialIcons name="wifi-off" size={20} color={colors.warning} />
+        <Text
+          className="text-sm flex-1 text-warning font-semibold"
+          style={{ color: colors.warning }}
+        >
+          No Internet Connection
+        </Text>
+      </View>
+    );
+  };
+
   const renderEmptyState = () => {
     if (messages.length > 0) return null;
     return (
@@ -309,7 +331,7 @@ export default function ChatScreen() {
     <ScreenContainer className="bg-background flex-1">
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
         className="flex-1"
         style={{ flex: 1 }}
       >
@@ -347,7 +369,7 @@ export default function ChatScreen() {
             style={{ backgroundColor: colors.background }}
             scrollEventThrottle={16}
           >
-            <View className="flex-row gap-2">
+            <View className="flex-row gap-2 px-2">
               {SUBJECTS.map((subject) => (
                 <Pressable
                   key={subject.id}
@@ -363,8 +385,9 @@ export default function ChatScreen() {
                           : colors.border,
                       backgroundColor:
                         selectedSubject === subject.label
-                          ? colors.primary + "15"
+                          ? colors.primary + "20"
                           : colors.surface,
+                      borderWidth: selectedSubject === subject.label ? 2 : 1,
                     }}
                   >
                     <MaterialIcons
@@ -394,6 +417,7 @@ export default function ChatScreen() {
           </ScrollView>
 
           {/* Messages List */}
+          {renderOfflineIndicator()}
           {renderError()}
           {messages.length === 0 ? (
             renderEmptyState()
@@ -421,24 +445,25 @@ export default function ChatScreen() {
             className="flex-row items-center gap-3 rounded-full px-4 py-3 border border-border"
             style={{
               backgroundColor: colors.surface,
-              borderColor: colors.border,
+              borderColor: !isConnected ? colors.warning : colors.border,
+              opacity: isConnected === false ? 0.6 : 1,
             }}
           >
             <MaterialIcons
               name="edit"
               size={20}
-              color={colors.muted}
+              color={!isConnected ? colors.warning : colors.muted}
             />
             <TextInput
               ref={inputRef}
               className="flex-1 text-base text-foreground"
-              placeholder="Ask a question..."
-              placeholderTextColor={colors.muted}
+              placeholder={isConnected === false ? "No internet..." : "Ask a question..."}
+              placeholderTextColor={!isConnected ? colors.warning : colors.muted}
               value={inputText}
               onChangeText={setInputText}
               onSubmitEditing={handleSendMessage}
               returnKeyType="send"
-              editable={!isLoading}
+              editable={!isLoading && isConnected !== false}
               multiline={false}
               style={{
                 color: colors.foreground,
@@ -446,10 +471,10 @@ export default function ChatScreen() {
             />
             <Pressable
               onPress={handleSendMessage}
-              disabled={isLoading || inputText.trim() === ""}
+              disabled={isLoading || inputText.trim() === "" || !isConnected}
               style={({ pressed }) => [
                 {
-                  opacity: pressed ? 0.7 : isLoading || inputText.trim() === "" ? 0.4 : 1,
+                  opacity: pressed ? 0.7 : isLoading || inputText.trim() === "" || !isConnected ? 0.4 : 1,
                 },
               ]}
             >
@@ -457,7 +482,7 @@ export default function ChatScreen() {
                 name="send"
                 size={20}
                 color={
-                  isLoading || inputText.trim() === ""
+                  isLoading || inputText.trim() === "" || !isConnected
                     ? colors.muted
                     : colors.primary
                 }
